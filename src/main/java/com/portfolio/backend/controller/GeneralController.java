@@ -1,9 +1,11 @@
 package com.portfolio.backend.controller;
 
 import com.portfolio.backend.dto.CardDto;
+import com.portfolio.backend.dto.DeleteResponseDto;
 import com.portfolio.backend.dto.EducExpDto;
 import com.portfolio.backend.dto.HardSkillDto;
 import com.portfolio.backend.dto.ImageDto;
+import com.portfolio.backend.dto.LogResponseDto;
 import com.portfolio.backend.dto.OwnerInfoDto;
 import com.portfolio.backend.dto.ProjectDto;
 import com.portfolio.backend.dto.SoftSkillDto;
@@ -24,18 +26,21 @@ import com.portfolio.backend.service.ICardService;
 import com.portfolio.backend.service.ICardTypeService;
 import com.portfolio.backend.service.IEducExpTypeService;
 import com.portfolio.backend.service.IImageService;
+import com.portfolio.backend.utils.JWTUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,11 +57,14 @@ public class GeneralController {
     IImageService interImg;
     @Autowired
     IAccountService interAcc;
+    @Autowired
+    JWTUtil jwtUtil;
     
     private List<CardType> cardTypes = new ArrayList<>();
     private List<EducExpType> educExpTypes = new ArrayList<>();
     private final String addPath = "/cards/agregar/";
     private final String editPath = "/cards/editar/";
+    private final String frontPath = "*";
     
     private CardType selectType(String type) {
         
@@ -67,6 +75,13 @@ public class GeneralController {
                         
     }
     
+    private boolean verifyToken(String token) {
+        
+        return jwtUtil.getKey(token) != null;
+        
+    }
+    
+    @CrossOrigin(origins = frontPath)
     @GetMapping("/cards/traer")
     public List<CardDto> getCards() {
         List<Card> cardList = interCard.getCards();
@@ -80,12 +95,14 @@ public class GeneralController {
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @GetMapping("/cards/traer/{id}")
     public CardDto getCard(@PathVariable Long id) {
         Card card = interCard.getCard(id);
         return card.getCardDto();
     }
     
+    @CrossOrigin(origins = frontPath)
     @GetMapping("/images/traer")
     public List<ImageDto> getImages() {
         List<Image> images = interImg.getImages();
@@ -99,8 +116,14 @@ public class GeneralController {
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping(addPath + "ownerInfo")
-    public String addOwnerInfo(@RequestBody OwnerInfoDto cont) {
+    public CardDto addOwnerInfo(@RequestBody OwnerInfoDto cont,
+                               @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (cardTypes.isEmpty()) {
             cardTypes = interCT.getCardTypes();
@@ -121,12 +144,18 @@ public class GeneralController {
         
         interCard.addCard(newCard);
         
-        return "Tarjeta (OwnerInfo) e imágenes guardadas con éxito";
+        return newCard.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping(addPath + "educExp")
-    public String addEducExp(@RequestBody EducExpDto cont) {
+    public CardDto addEducExp(@RequestBody EducExpDto cont,
+                             @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (cardTypes.isEmpty()) {
             cardTypes = interCT.getCardTypes();
@@ -158,12 +187,20 @@ public class GeneralController {
         
         interCard.addCard(newCard);
         
-        return "Tarjeta (EducExp) e imágenes guardadas con éxito";
+        System.out.println(newCard.getId());
+        
+        return newCard.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping(addPath + "hardSkill")
-    public String addHardSkill(@RequestBody HardSkillDto cont) {
+    public CardDto addHardSkill(@RequestBody HardSkillDto cont,
+                               @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (cardTypes.isEmpty()) {
             cardTypes = interCT.getCardTypes();
@@ -184,12 +221,18 @@ public class GeneralController {
         
         interCard.addCard(newCard);
         
-        return "Tarjeta (HardSkill) e imágenes guardadas con éxito";
+        return newCard.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping(addPath + "softSkill")
-    public String addSoftSkill(@RequestBody SoftSkillDto cont) {
+    public CardDto addSoftSkill(@RequestBody SoftSkillDto cont,
+                               @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (cardTypes.isEmpty()) {
             cardTypes = interCT.getCardTypes();
@@ -209,12 +252,18 @@ public class GeneralController {
         
         interCard.addCard(newCard);
         
-        return "Tarjeta (SoftSkill) guardada con éxito";
+        return newCard.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping(addPath + "project")
-    public String addProject(@RequestBody ProjectDto cont) {
+    public CardDto addProject(@RequestBody ProjectDto cont,
+                             @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (cardTypes.isEmpty()) {
             cardTypes = interCT.getCardTypes();
@@ -238,19 +287,35 @@ public class GeneralController {
         
         interCard.addCard(newCard);
         
-        return "Tarjeta (Project) e imágenes guardadas con éxito";
+        return newCard.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PostMapping("/account/tryToLog")
-    public boolean tryToLog(@RequestBody Account log) {
+    public LogResponseDto tryToLog(@RequestBody Account log) {
         
-        return interAcc.tryToLog(log);
+        if (interAcc.tryToLog(log)) {
+            
+            String tokenJwt = jwtUtil.create(log.getUsername(), log.getPassword());
+            Long exp = jwtUtil.getTtlMillis();
+            
+            return new LogResponseDto(tokenJwt, exp);
+            
+        }
+        
+        return null;
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping(editPath + "ownerInfo")
-    public String editOwnerInfo(@RequestBody OwnerInfoDto cont) {
+    public CardDto editOwnerInfo(@RequestBody OwnerInfoDto cont,
+                                @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         Card card = interCard.getCard(cont.getId());
         OwnerInfo content = card.getOIContent();
@@ -284,12 +349,18 @@ public class GeneralController {
         
         interCard.addCard(card);
         
-        return "Tarjeta (OwnerInfo) editada correctamente";
+        return card.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping(editPath + "educExp")
-    public String editEducExp(@RequestBody EducExpDto cont) {
+    public CardDto editEducExp(@RequestBody EducExpDto cont,
+                              @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         Card card = interCard.getCard(cont.getId());
         EducExp content = card.getEEContent();
@@ -315,12 +386,18 @@ public class GeneralController {
         
         interCard.addCard(card);
         
-        return "Tarjeta (EducExp) editada correctamente";
+        return card.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping(editPath + "hardSkill")
-    public String editHardSkill(@RequestBody HardSkillDto cont) {
+    public CardDto editHardSkill(@RequestBody HardSkillDto cont,
+                                @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         Card card = interCard.getCard(cont.getId());
         HardSkill content = card.getHSContent();
@@ -344,12 +421,18 @@ public class GeneralController {
         
         interCard.addCard(card);
         
-        return "Tarjeta (HardSkill) editada correctamente";
+        return card.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping(editPath + "softSkill")
-    public String editSoftSkill(@RequestBody SoftSkillDto cont) {
+    public CardDto editSoftSkill(@RequestBody SoftSkillDto cont,
+                                @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         Card card = interCard.getCard(cont.getId());
         SoftSkill content = card.getSSContent();
@@ -362,12 +445,18 @@ public class GeneralController {
         
         interCard.addCard(card);
         
-        return "Tarjeta (SoftSkill) editada correctamente";
+        return card.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping(editPath + "project")
-    public String editProject(@RequestBody ProjectDto cont) {
+    public CardDto editProject(@RequestBody ProjectDto cont,
+                              @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         Card card = interCard.getCard(cont.getId());
         Project content = card.getPJContent();
@@ -392,12 +481,18 @@ public class GeneralController {
         
         interCard.addCard(card);
         
-        return "Tarjeta (Project) editada correctamente";
+        return card.getCardDto();
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @PutMapping("/cards/mover")
-    public void cardMove(@RequestBody List<MoveMessage> movements) {
+    public void cardMove(@RequestBody List<MoveMessage> movements,
+                         @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return;
+        }
         
         List<Card> cards = interCard.getCards(movements
                 .stream()
@@ -415,17 +510,29 @@ public class GeneralController {
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @DeleteMapping("/cards/borrar/{id}")
-    public String deleteCard(@PathVariable Long id) {
+    public DeleteResponseDto deleteCard(@PathVariable Long id,
+                             @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         interCard.deleteCard(id);
-        return "La carta (id = " + id + ") se eliminó correctamente";
+        return new DeleteResponseDto("La carta (id = " + id + ") se eliminó correctamente");
         
     }
     
+    @CrossOrigin(origins = frontPath)
     @DeleteMapping("/images/borrar")
     public String deleteImage(@RequestParam ("id") Optional<Long> id,
-                              @RequestParam ("nombre") Optional<String> name) {
+                              @RequestParam ("nombre") Optional<String> name,
+                              @RequestHeader(value = "Authorization") String token) {
+        
+        if (!verifyToken(token)) {
+            return null;
+        }
         
         if (id.isPresent()) {
         
